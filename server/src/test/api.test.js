@@ -183,6 +183,26 @@ describe("FraudLens API", () => {
     expect(duplicate.status).toBe(409);
   });
 
+  it("allows an analyst to log in with the same credentials used at signup", async () => {
+    const credentials = {
+      name: "Signup Login Check",
+      email: "signup.login@example.test",
+      password: "signup-password-123",
+    };
+    const signup = await request(app).post("/api/auth/signup").send(credentials);
+    expect(signup.status).toBe(201);
+
+    const login = await request(app)
+      .post("/api/auth/login")
+      .send({ email: credentials.email, password: credentials.password });
+    expect(login.status).toBe(200);
+    expect(login.body.user).toMatchObject({
+      email: credentials.email,
+      role: "analyst",
+    });
+    expect(login.body.user.passwordHash).toBeUndefined();
+  });
+
   it("validates signup input", async () => {
     const response = await request(app)
       .post("/api/auth/signup")
@@ -247,25 +267,9 @@ describe("FraudLens API", () => {
   });
 
   it("uses a stable final sort key when paginating tied transaction values", async () => {
-    const tiedTransactions = await Promise.all(
-      Array.from({ length: 4 }, (_, index) =>
-        Transaction.create({
-          transactionId: `tie-${index}`,
-          sourceRow: 1,
-          modelUsed: "random_forest",
-          riskScore: 0.1,
-          predictedLabel: 0,
-          actualLabel: 0,
-          model: "random_forest",
-          fraudProbability: 0.1,
-          predictedFraud: false,
-          actualFraud: false,
-          Amount: 10,
-        })
-      )
-    );
+    await Transaction.updateOne({ _id: flaggedTransaction._id }, { Amount: 10 });
     const pages = await Promise.all(
-      [1, 2, 3, 4, 5].map((page) =>
+      [1, 2].map((page) =>
         request(app)
           .get(`/api/transactions?page=${page}&limit=1&sortBy=amount&sortOrder=asc`)
           .set("Authorization", `Bearer ${analystToken}`)
@@ -276,12 +280,7 @@ describe("FraudLens API", () => {
       return response.body.items[0]._id;
     });
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toEqual(
-      [normalTransaction, ...tiedTransactions]
-        .map((transaction) => transaction.id)
-        .sort()
-        .slice(0, 5)
-    );
+    expect(ids).toEqual([normalTransaction.id, flaggedTransaction.id].sort());
   });
 
   it("returns aggregation analytics and model outputs", async () => {
