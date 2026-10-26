@@ -1,0 +1,105 @@
+@baseUrl = http://localhost:4000/api
+@token = replace-with-token-from-login
+@transactionId = replace-with-mongodb-transaction-id
+@investigationId = replace-with-mongodb-investigation-id
+@analystId = replace-with-mongodb-analyst-id
+
+### Health
+GET {{baseUrl}}/health
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "analyst@example.com",
+  "password": "replace-with-local-analyst-password"
+}
+
+### Current user
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### Create analyst (admin only)
+POST {{baseUrl}}/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "New Analyst",
+  "email": "new-analyst@example.com",
+  "password": "replace-with-a-12-character-password"
+}
+
+### List active analysts for case assignment
+GET {{baseUrl}}/users/analysts
+Authorization: Bearer {{token}}
+
+### List transactions
+GET {{baseUrl}}/transactions?page=1&limit=25&riskScoreMin=0.5&predictedLabel=1&sortBy=riskScore&sortOrder=desc
+Authorization: Bearer {{token}}
+
+### Get a transaction
+GET {{baseUrl}}/transactions/{{transactionId}}
+Authorization: Bearer {{token}}
+
+### Summary analytics
+GET {{baseUrl}}/analytics/summary
+Authorization: Bearer {{token}}
+
+### Fraud by relative dataset hour
+GET {{baseUrl}}/analytics/fraud-over-time?interval=hour
+Authorization: Bearer {{token}}
+
+### Risk score histogram
+GET {{baseUrl}}/analytics/risk-distribution
+Authorization: Bearer {{token}}
+
+### Highest-risk records
+GET {{baseUrl}}/analytics/top-risky?limit=10
+Authorization: Bearer {{token}}
+
+### Model metrics
+GET {{baseUrl}}/models/metrics
+Authorization: Bearer {{token}}
+
+### Random Forest feature importance
+GET {{baseUrl}}/models/feature-importance
+Authorization: Bearer {{token}}
+
+### Open investigation (transaction must be flagged)
+POST {{baseUrl}}/investigations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "transactionId": "{{transactionId}}",
+  "notes": "Initial review"
+}
+
+### Filter investigations
+GET {{baseUrl}}/investigations?status=open&assignedTo={{analystId}}
+Authorization: Bearer {{token}}
+
+### Change status and assignment
+PATCH {{baseUrl}}/investigations/{{investigationId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "under_review",
+  "assignedTo": "{{analystId}}"
+}
+
+### Add a note
+POST {{baseUrl}}/investigations/{{investigationId}}/notes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "text": "Reviewed transaction pattern."
+}
+
+### List users (admin only)
+GET {{baseUrl}}/admin/users
+Authorization: Bearer {{token}}
