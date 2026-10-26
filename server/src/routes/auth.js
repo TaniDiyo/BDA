@@ -34,11 +34,19 @@ const signupRateLimit = rateLimit({
   },
 });
 
+const emailNormalizationOptions = {
+  gmail_remove_dots: false,
+  gmail_remove_subaddress: false,
+};
+
 router.post(
   "/login",
   loginRateLimit,
   [
-    body("email").isEmail().withMessage("Enter a valid email address.").normalizeEmail(),
+    body("email")
+      .isEmail()
+      .withMessage("Enter a valid email address.")
+      .normalizeEmail(emailNormalizationOptions),
     body("password").isString().isLength({ min: 1 }).withMessage("Password is required."),
     validate,
   ],
@@ -49,7 +57,10 @@ router.post(
   signupRateLimit,
   [
     body("name").isString().trim().isLength({ min: 1, max: 100 }),
-    body("email").isEmail().withMessage("Enter a valid email address.").normalizeEmail(),
+    body("email")
+      .isEmail()
+      .withMessage("Enter a valid email address.")
+      .normalizeEmail(emailNormalizationOptions),
     body("password").isString().isLength({ min: 12, max: 128 }),
     validate,
   ],

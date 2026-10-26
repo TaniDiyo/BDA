@@ -12,8 +12,13 @@ function publicUser(user) {
   };
 }
 
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
 async function login(email, password) {
-  const user = await User.findOne({ email: email.toLowerCase() }).select("+passwordHash");
+  const normalizedEmail = normalizeEmail(email);
+  const user = await User.findOne({ email: normalizedEmail }).select("+passwordHash");
   if (!user || !user.active || !(await bcrypt.compare(password, user.passwordHash))) {
     throw new AppError(401, "Email or password is incorrect.");
   }
@@ -35,11 +40,12 @@ async function getCurrentUser(userId) {
 }
 
 async function createAnalyst({ name, email, password }) {
-  const existing = await User.exists({ email: email.toLowerCase() });
+  const normalizedEmail = normalizeEmail(email);
+  const existing = await User.exists({ email: normalizedEmail });
   if (existing) throw new AppError(409, "A user with that email already exists.");
   const user = await User.create({
     name,
-    email: email.toLowerCase(),
+    email: normalizedEmail,
     passwordHash: await bcrypt.hash(password, 12),
     role: "analyst",
   });

@@ -18,7 +18,9 @@ router.post(
   authorize("admin"),
   [
     body("name").isString().trim().isLength({ min: 1, max: 100 }),
-    body("email").isEmail().normalizeEmail(),
+    body("email")
+      .isEmail()
+      .normalizeEmail({ gmail_remove_dots: false, gmail_remove_subaddress: false }),
     body("password").isString().isLength({ min: 12, max: 128 }),
     validate,
   ],
